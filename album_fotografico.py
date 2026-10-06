@@ -1,18 +1,15 @@
 def carica_da_file(file_path):
     """Carica le foto dal file, creando un nuovo anno ogni volta che compare per la prima volta"""
     # TODO
-
+    from csv import reader
     try:
-        album = {}  # Dizionario: { anno: [lista_di_foto] }
+        album = {}
 
         with open(file_path, "r", encoding="utf-8") as file:
             csv_reader = reader(file)
 
-            # Saltiamo la prima riga di intestazione
-            next(csv_reader, None)
-
-            for line in csv_reader:
-                if not line:
+            for i, line in enumerate(csv_reader):
+                if i == 0 or not line:
                     continue
 
                 codice = line[0].strip()
@@ -21,20 +18,17 @@ def carica_da_file(file_path):
                 mese = int(line[3].strip())
                 anno = int(line[4].strip())
 
-                # Rappresentazione della singola foto (dizionario o tupla/lista)
-                foto = {
-                    "codice": codice,
-                    "titolo": titolo,
-                    "autore": autore,
-                    "mese": mese,
-                    "anno": anno
-                }
+                foto = {}
+                foto["codice"] = codice
+                foto["titolo"] = titolo
+                foto["autore"] = autore
+                foto["mese"] = mese
+                foto["anno"] = anno
 
-                # Se l'anno non è ancora presente nell'album, creiamo la nuova chiave
+
                 if anno not in album:
                     album[anno] = []
 
-                # Aggiungiamo la foto alla lista di quell'anno
                 album[anno].append(foto)
 
         return album
@@ -46,16 +40,34 @@ def carica_da_file(file_path):
 def aggiungi_foto(album, codice, titolo, autore, mese, anno, file_path):
     """Aggiunge una foto all'album, creando l'anno al volo se non è ancora presente"""
     # TODO
+
+    if mese < 1 or mese > 12:
+        return None
+
+    for lista_foto in album.values():
+        for foto_esistente in lista_foto:
+            if foto_esistente["codice"] == codice:
+                return None
+
+    foto = {}
+    foto["codice"] = codice
+    foto["titolo"] = titolo
+    foto["autore"] = autore
+    foto["mese"] = mese
+    foto["anno"] = anno
+
+
+    if anno not in album:
+        album[anno] = []
+
+    album[anno].append(foto)
+
+    from csv import writer
     try:
-        from csv import writer
-        csv_writer = writer(open(file_path, "w"))
-        if codice in file_path:
-            return None
-        elif mese < 1 or mese > 12:
-            return None
-        else:
-            csv_writer.writerow([album, codice, titolo, autore, mese, anno])
-            return True
+        with open(file_path, "a", encoding="utf-8", newline="") as file:
+            csv_writer = writer(file)
+            csv_writer.writerow([codice, titolo, autore, mese, anno])
+        return True
     except FileNotFoundError:
         return None
 
@@ -64,15 +76,30 @@ def aggiungi_foto(album, codice, titolo, autore, mese, anno, file_path):
 def cerca_foto(album, codice):
     """Cerca una foto nell'album dato il codice"""
     # TODO
+    for lista in album.values():
+        for foto in lista:
+            if codice == foto["codice"]:
+                return f"{foto['codice']}, {foto['titolo']}, {foto['autore']}, {foto['mese']}, {foto['anno']}"
+
+    return None
 
 
 def elenco_foto_anno_per_titolo(album, anno):
     """Ordina i titoli delle foto di un dato anno in ordine alfabetico"""
     # TODO
+    if anno in album:
+        ordine = []
+        for foto in album[anno]:
+            ordine.append(foto["titolo"])
+        ordine.sort()
+        return ordine
+
+    else:
+        return None
 
 
 def main():
-    album = []
+    album = {}
     file_path = "album_fotografico.csv"
 
     while True:
@@ -89,6 +116,7 @@ def main():
             while True:
                 file_path = input("Inserisci il path del file da caricare: ").strip()
                 album = carica_da_file(file_path)
+                print(album)
                 if album is not None:
                     break
 
